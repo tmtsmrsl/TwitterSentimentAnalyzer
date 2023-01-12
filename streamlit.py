@@ -96,7 +96,7 @@ if "df" in st.session_state:
             )
         with col2:
             wordcloud = hf.plot_wordcloud(tweet_df, colormap=wc_color)
-            st.pyplot(wordcloud, use_container_width=True)
+            st.pyplot(wordcloud)
 
     adjust_tab_font = """
     <style>

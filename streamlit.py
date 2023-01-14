@@ -30,13 +30,16 @@ with st.sidebar:
 
     st.markdown(
         """
+        <div style="text-align: justify;">
             This app performs sentiment analysis on the top tweets in the last 
             7 days based on the 
             entered search term. Since the app can only predict positive or 
             negative sentiment, it is more suitable towards analyzing the 
             sentiment of brand, product, service, company, or person. 
             Only English tweets are supported.
-            """
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
     with st.form(key="search_form"):

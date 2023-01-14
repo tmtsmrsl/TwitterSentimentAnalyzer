@@ -199,7 +199,7 @@ def get_top_n_gram(tweet_df, ngram_range, n=10):
     vectorizer = CountVectorizer(
         analyzer="word", ngram_range=ngram_range, stop_words=stopwords
     )
-    X = vectorizer.fit_transform(corpus.astype("string").values)
+    X = vectorizer.fit_transform(corpus.astype(str).values)
     words = vectorizer.get_feature_names_out()
     words_count = np.ravel(X.sum(axis=0))
     df = pd.DataFrame(zip(words, words_count))

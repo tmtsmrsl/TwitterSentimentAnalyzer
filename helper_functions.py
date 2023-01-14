@@ -19,6 +19,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud
 from PIL import Image
+import threading
 
 
 # Create a custom plotly theme and set it as default
@@ -62,27 +63,27 @@ pio.templates["custom"].layout.colorway = [
 pio.templates.default = "custom"
 
 
-model = load_model("static/lstm_model-06-0.78.h5")
-with open("static/tokenizer.pickle", "rb") as handle:
-    custom_tokenizer = pickle.load(handle)
-
-
+def append_tweet_data(tweet_list, search_term, start, end, num_tweets):
+    for i, tweet in enumerate(sntwitter.TwitterSearchScraper('{} since:{} until:{} lang:en'.format(search_term, start, end), top=True).get_items()):
+        if i >= num_tweets:
+            break
+        tweet_list.append([tweet.user.username, tweet.date, tweet.likeCount, tweet.content])
+        
+        
 def get_tweet_df(search_term, num_tweets, since_date=None, until_date=None):
     if since_date == None:
         since_date = dt.date.today() - dt.timedelta(days=6)
     if until_date == None:
         until_date = dt.date.today() + dt.timedelta(days=1)
-    date_range = [since_date + dt.timedelta(days=n) for n in range((until_date - since_date).days + 1)]
-    tweet_data = []
-    for n in range(len(date_range) - 1):
-        start = date_range[n]
-        end = date_range[n+1]
-        for i, tweet in enumerate(sntwitter.TwitterSearchScraper('{} lang:en since:{} until:{}'.format(search_term, start, end), top=True).get_items()):
-            if i >= num_tweets or i >= 400:
-                break
-            tweet_data.append([tweet.user.username, tweet.date, tweet.likeCount, tweet.content])
-
-    tweet_df = pd.DataFrame(tweet_data, columns=['Username', 'Date', 'Like Count', 'Tweet'])
+    date_range = pd.date_range(start=since_date, end=until_date)
+    tweet_list = []
+    for date in date_range:
+        start = date.strftime("%Y-%m-%d")
+        end = (date + dt.timedelta(days=1)).strftime("%Y-%m-%d")
+        t = threading.Thread(target=append_tweet_data, args=[tweet_list, search_term, start, end, num_tweets])
+        t.start()
+        t.join(15)
+    tweet_df = pd.DataFrame(tweet_list, columns=['Username', 'Date', 'Like Count', 'Tweet'])
     return tweet_df
 
 
@@ -121,6 +122,9 @@ def text_preprocessing(text):
 
 
 def predict_sentiment(tweet_df):
+    model = load_model("static/lstm_model-04.h5")
+    with open("static/tokenizer.pickle", "rb") as handle:
+        custom_tokenizer = pickle.load(handle)
     temp_df = tweet_df.copy()
     temp_df["Cleaned Tweet"] = temp_df["Tweet"].apply(text_preprocessing)
     temp_df = temp_df[temp_df['Cleaned Tweet'] != ""]
@@ -133,6 +137,7 @@ def predict_sentiment(tweet_df):
         lambda x: "Positive" if x >= 0.50 else "Negative"
     )
     return temp_df
+
 
 def plot_sentiment(tweet_df):
     sentiment_count = tweet_df["Sentiment"].value_counts()
@@ -153,6 +158,10 @@ def plot_sentiment(tweet_df):
     return fig
     
 def plot_wordcloud(tweet_df, colormap="Greens"):
+    stopwords = set()
+    with open("static/en_stopwords_viz.txt", "r") as file:
+        for word in file:
+            stopwords.add(word.rstrip("\n"))
     cmap = mpl.cm.get_cmap(colormap)(np.linspace(0,1,20))
     cmap = mpl.colors.ListedColormap(cmap[10:15])
     mask = np.array(Image.open("static/twitter_mask.png"))
@@ -161,13 +170,14 @@ def plot_wordcloud(tweet_df, colormap="Greens"):
     wc = WordCloud(
         background_color="white",
         font_path=font,
-        stopwords=["not", "no"],
+        stopwords=stopwords,
         max_words=90,
         colormap=cmap,
         mask=mask,
         random_state=42,
         collocations=False,
         min_word_length=2,
+        max_font_size=200
     )
     wc.generate(text)
     fig = plt.figure(figsize=(8, 8))
@@ -181,9 +191,13 @@ def plot_wordcloud(tweet_df, colormap="Greens"):
 
 
 def get_top_n_gram(tweet_df, ngram_range, n=10):
+    stopwords = set()
+    with open("static/en_stopwords_viz.txt", "r") as file:
+        for word in file:
+            stopwords.add(word.rstrip("\n"))
     corpus = tweet_df["Cleaned Tweet"]
     vectorizer = CountVectorizer(
-        analyzer="word", ngram_range=ngram_range, stop_words=["not", "no"]
+        analyzer="word", ngram_range=ngram_range, stop_words=stopwords
     )
     X = vectorizer.fit_transform(corpus.astype("string").values)
     words = vectorizer.get_feature_names_out()

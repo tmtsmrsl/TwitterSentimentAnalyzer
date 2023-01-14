@@ -8,4 +8,4 @@ nltk
 scikit-learn
 matplotlib
 wordcloud
-git+https://github.com/tmtsmrsl/snscrape.git#egg=snscrape
+snscrape

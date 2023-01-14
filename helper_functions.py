@@ -191,10 +191,10 @@ def plot_wordcloud(tweet_df, colormap="Greens"):
 
 
 def get_top_n_gram(tweet_df, ngram_range, n=10):
-    stopwords = set()
+    stopwords = []
     with open("static/en_stopwords_viz.txt", "r") as file:
         for word in file:
-            stopwords.add(word.rstrip("\n"))
+            stopwords.append(word.rstrip("\n"))
     corpus = tweet_df["Cleaned Tweet"]
     vectorizer = CountVectorizer(
         analyzer="word", ngram_range=ngram_range, stop_words=stopwords

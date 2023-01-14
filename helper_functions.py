@@ -6,6 +6,7 @@ import pickle
 import snscrape.modules.twitter as sntwitter
 import datetime as dt
 import nltk
+
 nltk.download(
     ["punkt", "wordnet", "omw-1.4", "averaged_perceptron_tagger", "universal_tagset"]
 )
@@ -64,12 +65,18 @@ pio.templates.default = "custom"
 
 
 def append_tweet_data(tweet_list, search_term, start, end, num_tweets):
-    for i, tweet in enumerate(sntwitter.TwitterSearchScraper('{} since:{} until:{} lang:en'.format(search_term, start, end), top=True).get_items()):
+    for i, tweet in enumerate(
+        sntwitter.TwitterSearchScraper(
+            "{} since:{} until:{} lang:en".format(search_term, start, end), top=True
+        ).get_items()
+    ):
         if i >= num_tweets:
             break
-        tweet_list.append([tweet.user.username, tweet.date, tweet.likeCount, tweet.content])
-        
-        
+        tweet_list.append(
+            [tweet.user.username, tweet.date, tweet.likeCount, tweet.content]
+        )
+
+
 def get_tweet_df(search_term, num_tweets, since_date=None, until_date=None):
     if since_date == None:
         since_date = dt.date.today() - dt.timedelta(days=6)
@@ -80,10 +87,15 @@ def get_tweet_df(search_term, num_tweets, since_date=None, until_date=None):
     for date in date_range:
         start = date.strftime("%Y-%m-%d")
         end = (date + dt.timedelta(days=1)).strftime("%Y-%m-%d")
-        t = threading.Thread(target=append_tweet_data, args=[tweet_list, search_term, start, end, num_tweets])
+        t = threading.Thread(
+            target=append_tweet_data,
+            args=[tweet_list, search_term, start, end, num_tweets],
+        )
         t.start()
         t.join(15)
-    tweet_df = pd.DataFrame(tweet_list, columns=['Username', 'Date', 'Like Count', 'Tweet'])
+    tweet_df = pd.DataFrame(
+        tweet_list, columns=["Username", "Date", "Like Count", "Tweet"]
+    )
     return tweet_df
 
 
@@ -95,7 +107,7 @@ def text_preprocessing(text):
     lemmatizer = WordNetLemmatizer()
     try:
         url_pattern = r"((http://)[^ ]*|(https://)[^ ]*|( www\.)[^ ]*)"
-        user_pattern = r'@[^\s]+'
+        user_pattern = r"@[^\s]+"
         entity_pattern = r"&.*;"
         neg_contraction = r"n't\W"
         non_alpha = "[^a-z]"
@@ -107,8 +119,8 @@ def text_preprocessing(text):
         cleaned_text = re.sub(non_alpha, " ", cleaned_text)
         tokens = nltk.word_tokenize(cleaned_text)
         # provide POS tag for lemmatization to yield better result
-        word_tag_tuples = pos_tag(tokens, tagset='universal')
-        tag_dict = {'NOUN':'n', 'VERB':'v', 'ADJ':'a', 'ADV':'r'}
+        word_tag_tuples = pos_tag(tokens, tagset="universal")
+        tag_dict = {"NOUN": "n", "VERB": "v", "ADJ": "a", "ADV": "r"}
         final_tokens = []
         for word, tag in word_tag_tuples:
             if len(word) > 1 and word not in stopwords:
@@ -127,7 +139,7 @@ def predict_sentiment(tweet_df):
         custom_tokenizer = pickle.load(handle)
     temp_df = tweet_df.copy()
     temp_df["Cleaned Tweet"] = temp_df["Tweet"].apply(text_preprocessing)
-    temp_df = temp_df[temp_df['Cleaned Tweet'] != ""]
+    temp_df = temp_df[temp_df["Cleaned Tweet"] != ""]
     sequences = pad_sequences(
         custom_tokenizer.texts_to_sequences(temp_df["Cleaned Tweet"]), maxlen=54
     )
@@ -156,13 +168,14 @@ def plot_sentiment(tweet_df):
     )
     fig.update_layout(showlegend=False)
     return fig
-    
+
+
 def plot_wordcloud(tweet_df, colormap="Greens"):
     stopwords = set()
     with open("static/en_stopwords_viz.txt", "r") as file:
         for word in file:
             stopwords.add(word.rstrip("\n"))
-    cmap = mpl.cm.get_cmap(colormap)(np.linspace(0,1,20))
+    cmap = mpl.cm.get_cmap(colormap)(np.linspace(0, 1, 20))
     cmap = mpl.colors.ListedColormap(cmap[10:15])
     mask = np.array(Image.open("static/twitter_mask.png"))
     font = "static/quartzo.ttf"
@@ -177,14 +190,12 @@ def plot_wordcloud(tweet_df, colormap="Greens"):
         random_state=42,
         collocations=False,
         min_word_length=2,
-        max_font_size=200
+        max_font_size=200,
     )
     wc.generate(text)
     fig = plt.figure(figsize=(8, 8))
     ax = fig.add_subplot(1, 1, 1)
-    plt.imshow(
-        wc, interpolation="bilinear"
-    )
+    plt.imshow(wc, interpolation="bilinear")
     plt.axis("off")
     plt.title("Wordcloud", fontdict={"fontsize": 16}, fontweight="heavy", pad=20, y=1.0)
     return fig

@@ -39,7 +39,7 @@ with st.sidebar:
             Only English tweets are supported.
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
     with st.form(key="search_form"):
@@ -56,7 +56,7 @@ with st.sidebar:
         st.markdown(
             "Note: Please wait around 2 minutes after hitting the search button."
         )
-    
+
     st.markdown("[Github link](https://github.com/tmtsmrsl/TwitterSentimentAnalyzer)")
     st.markdown("Created by Timotius Marselo")
 

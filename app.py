@@ -19,10 +19,46 @@ st.markdown(adjust_top_pad, unsafe_allow_html=True)
 
 # Whenever the search button is clicked, the search_callback function is called
 def search_callback():
-    st.session_state.df = hf.get_tweet_df(
+    st.session_state.df = hf.get_latest_tweet_df(
         st.session_state.search_term, st.session_state.num_tweets
     )
     st.session_state.df = hf.predict_sentiment(st.session_state.df)
+
+
+# with st.sidebar:
+#     st.title("Twitter Sentiment Analyzer")
+
+#     st.markdown(
+#         """
+#         <div style="text-align: justify;">
+#             This app performs sentiment analysis on the top tweets in the last 
+#             7 days based on the 
+#             entered search term. Since the app can only predict positive or 
+#             negative sentiment, it is more suitable towards analyzing the 
+#             sentiment of brand, product, service, company, or person. 
+#             Only English tweets are supported.
+#         </div>
+#         """,
+#         unsafe_allow_html=True,
+#     )
+
+#     with st.form(key="search_form"):
+#         st.subheader("Search Parameters")
+#         st.text_input("Search term", key="search_term")
+#         st.slider(
+#             "Max number of tweets per day",
+#             min_value=50,
+#             max_value=200,
+#             value=50,
+#             key="num_tweets",
+#         )
+#         submit_button = st.form_submit_button(label="Search", on_click=search_callback)
+#         st.markdown(
+#             "Note: it may take a while to load the results, especially with large number of tweets"
+#         )
+
+#     st.markdown("[Github link](https://github.com/tmtsmrsl/TwitterSentimentAnalyzer)")
+#     st.markdown("Created by Timotius Marselo")
 
 
 with st.sidebar:
@@ -31,9 +67,8 @@ with st.sidebar:
     st.markdown(
         """
         <div style="text-align: justify;">
-            This app performs sentiment analysis on the top tweets in the last 
-            7 days based on the 
-            entered search term. Since the app can only predict positive or 
+            This app performs sentiment analysis on the latest tweets based on 
+            the entered search term. Since the app can only predict positive or 
             negative sentiment, it is more suitable towards analyzing the 
             sentiment of brand, product, service, company, or person. 
             Only English tweets are supported.
@@ -45,16 +80,10 @@ with st.sidebar:
     with st.form(key="search_form"):
         st.subheader("Search Parameters")
         st.text_input("Search term", key="search_term")
-        st.slider(
-            "Max number of tweets per day",
-            min_value=50,
-            max_value=200,
-            value=50,
-            key="num_tweets",
-        )
+        st.slider("Number of tweets", min_value=100, max_value=2000, key="num_tweets")
         submit_button = st.form_submit_button(label="Search", on_click=search_callback)
         st.markdown(
-            "Note: Please wait around 2 minutes after hitting the search button."
+            "Note: it may take a while to load the results, especially with large number of tweets"
         )
 
     st.markdown("[Github link](https://github.com/tmtsmrsl/TwitterSentimentAnalyzer)")
@@ -96,7 +125,7 @@ if "df" in st.session_state:
                     return "background-color: #FF7F0E"
 
             st.dataframe(
-                tweet_df[["Sentiment", "Like Count", "Tweet"]].style.applymap(
+                tweet_df[["Sentiment", "Tweet"]].style.applymap(
                     sentiment_color, subset=["Sentiment"]
                 ),
                 height=350,

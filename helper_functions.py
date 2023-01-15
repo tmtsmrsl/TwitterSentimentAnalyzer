@@ -6,12 +6,12 @@ import pickle
 import snscrape.modules.twitter as sntwitter
 import datetime as dt
 import nltk
-
 nltk.download(
     ["punkt", "wordnet", "omw-1.4", "averaged_perceptron_tagger", "universal_tagset"]
 )
 from nltk.stem import WordNetLemmatizer
 from nltk.tag import pos_tag
+from nltk.tokenize import word_tokenize
 import re
 from sklearn.feature_extraction.text import CountVectorizer
 import plotly.express as px
@@ -64,37 +64,54 @@ pio.templates["custom"].layout.colorway = [
 pio.templates.default = "custom"
 
 
-def append_tweet_data(tweet_list, search_term, start, end, num_tweets):
+# def append_tweet_data(tweet_list, search_term, start, end, num_tweets):
+#     for i, tweet in enumerate(
+#         sntwitter.TwitterSearchScraper(
+#             "{} since:{} until:{} lang:en".format(search_term, start, end), top=True
+#         ).get_items()
+#     ):
+#         if i >= num_tweets:
+#             break
+#         tweet_list.append(
+#             [tweet.user.username, tweet.date, tweet.likeCount, tweet.content]
+#         )
+
+
+# def get_top_tweet_df(search_term, num_tweets, since_date=None, until_date=None):
+#     if since_date == None:
+#         since_date = dt.date.today() - dt.timedelta(days=6)
+#     if until_date == None:
+#         until_date = dt.date.today() + dt.timedelta(days=1)
+#     date_range = pd.date_range(start=since_date, end=until_date)
+#     tweet_list = []
+#     for date in date_range:
+#         start = date.strftime("%Y-%m-%d")
+#         end = (date + dt.timedelta(days=1)).strftime("%Y-%m-%d")
+#         t = threading.Thread(
+#             target=append_tweet_data,
+#             args=[tweet_list, search_term, start, end, num_tweets],
+#         )
+#         t.start()
+#         t.join(15)
+#     tweet_df = pd.DataFrame(
+#         tweet_list, columns=["Username", "Date", "Like Count", "Tweet"]
+#     )
+#     return tweet_df
+
+
+def get_latest_tweet_df(search_term, num_tweets):
+    tweet_data = []
     for i, tweet in enumerate(
-        sntwitter.TwitterSearchScraper(
-            "{} since:{} until:{} lang:en".format(search_term, start, end), top=True
-        ).get_items()
+        sntwitter.TwitterSearchScraper("{} lang:en".format(search_term)).get_items()
     ):
-        if i >= num_tweets:
+        if i >= num_tweets or i >= 5000:
             break
-        tweet_list.append(
+        tweet_data.append(
             [tweet.user.username, tweet.date, tweet.likeCount, tweet.content]
         )
 
-
-def get_tweet_df(search_term, num_tweets, since_date=None, until_date=None):
-    if since_date == None:
-        since_date = dt.date.today() - dt.timedelta(days=6)
-    if until_date == None:
-        until_date = dt.date.today() + dt.timedelta(days=1)
-    date_range = pd.date_range(start=since_date, end=until_date)
-    tweet_list = []
-    for date in date_range:
-        start = date.strftime("%Y-%m-%d")
-        end = (date + dt.timedelta(days=1)).strftime("%Y-%m-%d")
-        t = threading.Thread(
-            target=append_tweet_data,
-            args=[tweet_list, search_term, start, end, num_tweets],
-        )
-        t.start()
-        t.join(15)
     tweet_df = pd.DataFrame(
-        tweet_list, columns=["Username", "Date", "Like Count", "Tweet"]
+        tweet_data, columns=["Username", "Date", "Like Count", "Tweet"]
     )
     return tweet_df
 
@@ -106,18 +123,18 @@ def text_preprocessing(text):
             stopwords.add(word.rstrip("\n"))
     lemmatizer = WordNetLemmatizer()
     try:
-        url_pattern = r"((http://)[^ ]*|(https://)[^ ]*|( www\.)[^ ]*)"
+        url_pattern = r"((http://)[^ ]*|(https://)[^ ]*|(www\.)[^ ]*)"
         user_pattern = r"@[^\s]+"
         entity_pattern = r"&.*;"
         neg_contraction = r"n't\W"
         non_alpha = "[^a-z]"
         cleaned_text = text.lower()
-        cleaned_text = re.sub(url_pattern, "URL", cleaned_text)
-        cleaned_text = re.sub(user_pattern, "USERNAME", cleaned_text)
-        cleaned_text = re.sub(entity_pattern, " ", cleaned_text)
         cleaned_text = re.sub(neg_contraction, " not ", cleaned_text)
+        cleaned_text = re.sub(url_pattern, " ", cleaned_text)
+        cleaned_text = re.sub(user_pattern, " ", cleaned_text)
+        cleaned_text = re.sub(entity_pattern, " ", cleaned_text)
         cleaned_text = re.sub(non_alpha, " ", cleaned_text)
-        tokens = nltk.word_tokenize(cleaned_text)
+        tokens = word_tokenize(cleaned_text)
         # provide POS tag for lemmatization to yield better result
         word_tag_tuples = pos_tag(tokens, tagset="universal")
         tag_dict = {"NOUN": "n", "VERB": "v", "ADJ": "a", "ADV": "r"}
@@ -134,7 +151,7 @@ def text_preprocessing(text):
 
 
 def predict_sentiment(tweet_df):
-    model = load_model("static/lstm_model-04.h5")
+    model = load_model("static/lstm_model.h5")
     with open("static/tokenizer.pickle", "rb") as handle:
         custom_tokenizer = pickle.load(handle)
     temp_df = tweet_df.copy()

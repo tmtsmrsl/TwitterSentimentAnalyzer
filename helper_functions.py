@@ -64,41 +64,6 @@ pio.templates["custom"].layout.colorway = [
 pio.templates.default = "custom"
 
 
-# def append_tweet_data(tweet_list, search_term, start, end, num_tweets):
-#     for i, tweet in enumerate(
-#         sntwitter.TwitterSearchScraper(
-#             "{} since:{} until:{} lang:en".format(search_term, start, end), top=True
-#         ).get_items()
-#     ):
-#         if i >= num_tweets:
-#             break
-#         tweet_list.append(
-#             [tweet.user.username, tweet.date, tweet.likeCount, tweet.content]
-#         )
-
-
-# def get_top_tweet_df(search_term, num_tweets, since_date=None, until_date=None):
-#     if since_date == None:
-#         since_date = dt.date.today() - dt.timedelta(days=6)
-#     if until_date == None:
-#         until_date = dt.date.today() + dt.timedelta(days=1)
-#     date_range = pd.date_range(start=since_date, end=until_date)
-#     tweet_list = []
-#     for date in date_range:
-#         start = date.strftime("%Y-%m-%d")
-#         end = (date + dt.timedelta(days=1)).strftime("%Y-%m-%d")
-#         t = threading.Thread(
-#             target=append_tweet_data,
-#             args=[tweet_list, search_term, start, end, num_tweets],
-#         )
-#         t.start()
-#         t.join(15)
-#     tweet_df = pd.DataFrame(
-#         tweet_list, columns=["Username", "Date", "Like Count", "Tweet"]
-#     )
-#     return tweet_df
-
-
 def get_latest_tweet_df(search_term, num_tweets):
     tweet_data = []
     for i, tweet in enumerate(

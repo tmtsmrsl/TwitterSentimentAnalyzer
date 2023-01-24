@@ -6,6 +6,7 @@ import pickle
 import snscrape.modules.twitter as sntwitter
 import datetime as dt
 import nltk
+
 nltk.download(
     ["punkt", "wordnet", "omw-1.4", "averaged_perceptron_tagger", "universal_tagset"]
 )
@@ -183,7 +184,7 @@ def plot_wordcloud(tweet_df, colormap="Greens"):
 
 
 def get_top_n_gram(tweet_df, ngram_range, n=10):
-    stopwords = []
+    stopwords = set()
     with open("static/en_stopwords_viz.txt", "r") as file:
         for word in file:
             stopwords.append(word.rstrip("\n"))

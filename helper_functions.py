@@ -20,7 +20,6 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud
 from PIL import Image
-import threading
 
 
 # Create a custom plotly theme and set it as default
@@ -121,7 +120,7 @@ def predict_sentiment(tweet_df):
         custom_tokenizer = pickle.load(handle)
     temp_df = tweet_df.copy()
     temp_df["Cleaned Tweet"] = temp_df["Tweet"].apply(text_preprocessing)
-    temp_df = temp_df[temp_df["Cleaned Tweet"] != ""]
+    temp_df = temp_df[temp_df["Cleaned Tweet"].notna() & temp_df["Cleaned Tweet"] != ""]
     sequences = pad_sequences(
         custom_tokenizer.texts_to_sequences(temp_df["Cleaned Tweet"]), maxlen=54
     )

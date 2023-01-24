@@ -187,7 +187,7 @@ def get_top_n_gram(tweet_df, ngram_range, n=10):
     stopwords = set()
     with open("static/en_stopwords_viz.txt", "r") as file:
         for word in file:
-            stopwords.append(word.rstrip("\n"))
+            stopwords.add(word.rstrip("\n"))
     corpus = tweet_df["Cleaned Tweet"]
     vectorizer = CountVectorizer(
         analyzer="word", ngram_range=ngram_range, stop_words=stopwords

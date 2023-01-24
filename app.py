@@ -44,7 +44,7 @@ with st.sidebar:
         st.subheader("Search Parameters")
         st.text_input("Search term", key="search_term")
         st.slider("Number of tweets", min_value=100, max_value=2000, key="num_tweets")
-        submit_button = st.form_submit_button(label="Search", on_click=search_callback)
+        st.form_submit_button(label="Search", on_click=search_callback)
         st.markdown(
             "Note: it may take a while to load the results, especially with large number of tweets"
         )
